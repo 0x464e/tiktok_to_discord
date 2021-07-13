@@ -1,0 +1,8 @@
+{
+  "TOKEN": "",
+  "COOLDOWN_PER_USER": 7500,
+  "MAX_TIKTOKS_PER_MESSAGE": 5,
+  "DB_PATH": "database.json",
+  "USE_DATABASE": true,
+  "STORE_THUMBNAILS": true
+}
