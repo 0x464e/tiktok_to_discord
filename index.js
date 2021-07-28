@@ -8,6 +8,7 @@ const axios = require('axios');
 const fs = require('fs');
 const nodeCleanup = require('node-cleanup');
 const cron = require('node-cron');
+const { execFile } = require('child_process');
 
 let cooldown_users = new Set();
 let database = fs.existsSync(config.DB_PATH) ? JSON.parse(fs.readFileSync(config.DB_PATH).toString()) : {};
@@ -19,7 +20,7 @@ client.on('message', async msg => {
     let found_match = false;
     //convert to set to remove duplicates and then back to array to be able to slice (slicing so max 5 tiktoks per message)
     Array.from(new Set(msg.content.match(urlRegex()))).slice(0, config.MAX_TIKTOKS_PER_MESSAGE).forEach((url) => {
-        if(/(www\.tiktok\.com)|(vm\.tiktok\.com)/.test(url)) {
+        if (/(www\.tiktok\.com)|(vm\.tiktok\.com)/.test(url)) {
             cooldown_users.add(msg.author.id);
             found_match = true;
             try {
@@ -34,6 +35,15 @@ client.on('message', async msg => {
                         .catch(console.error))                  // if sending of the Discord message itself failed, just log error to console
                         .catch(err => report_error(msg, err)))  // if TikTokScraper.getVideoMeta() failed
                         .catch(err => report_error(msg, err));  // if axios.get() failed
+        }
+        else if (config.EMBED_TWITTER_VIDEO && /\Wtwitter\.com/.test(url)) {
+            execFile('gallery-dl', ['-g', url], (error, stdout, stderr) => {
+                if (error) {
+                    return;
+                }
+                if (/.mp4/.test(stdout))
+                    msg.lineReplyNoMention(stdout).catch(console.error);
+            });
         }
     });
 

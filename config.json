@@ -1,8 +1,9 @@
 {
-  "TOKEN": "",
+  "TOKEN": "NzMxMTk5OTEzMTk0NDIyMzky.Xwik_A.XhiXrUCqLgvZZ22JqRedm4EJKyo",
   "COOLDOWN_PER_USER": 7500,
   "MAX_TIKTOKS_PER_MESSAGE": 5,
   "DB_PATH": "database.json",
   "USE_DATABASE": true,
-  "STORE_THUMBNAILS": true
+  "STORE_THUMBNAILS": true,
+  "EMBED_TWITTER_VIDEO": false
 }

@@ -1,8 +1,15 @@
 # Tiktok To Discord
-A Discord bot to automatically download and post the raw video files behind a TikTok link.  
+A Discord bot to automatically download and post the raw video file behind a TikTok link.  
 Discord doesn't embed TikTok video links at all, this removes the huge annoyance of having to open the link in your web browser to view the video.  
 ![Demonstration](https://i.imgur.com/k4DlynO.gif)  
 This is my first *larger* js/nodejs project, so please excuse possible bad code/implementations.
+
+---
+
+Now temporarily also embeds Twitter videos since Discord managed to break that.  
+I'm sure it'll be fixed, so this will get removed then.  
+Set `config.EMBED_TWITTER_VIDEO` to enabled this.
+
 ## Getting  Started
 
 ### Dependencies
@@ -10,6 +17,8 @@ This is my first *larger* js/nodejs project, so please excuse possible bad code/
 * [NodeJS](https://nodejs.org/en/)
 * [tiktok-scraper](https://github.com/drawrowfly/tiktok-scraper)  
 (TikTok doesn't offer an API or any official way to get videos, so this project relies on this awesome scraper being maintained)
+* [gallery-dl](https://github.com/mikf/gallery-dl)  
+(if you enable embedding Twitter videos, disabled by default)
 
 ### Installing
 
@@ -18,6 +27,10 @@ This is my first *larger* js/nodejs project, so please excuse possible bad code/
 `git clone https://github.com/0x464e/tiktok_to_discord`
 * Insert your Discord bot's token into `config.json` 
 * Install the required Node packages from `package.json` by running `npm install`
+---
+For embedding Twitter video:
+* Install [gallery-dl](https://github.com/mikf/gallery-dl) via whatever you prefer, read their instructions  
+* Ensure `gallery-dl` is found in PATH
 
 ### Executing the application
 
