@@ -1,8 +1,7 @@
 const config = require('./config.json');
 const TikTokScraper = require('tiktok-scraper');
-const Discord = require('discord.js');
-require('discord-reply');
-const client = new Discord.Client();
+const {Intents, Client } = require('discord.js');
+const client = new Client({intents:[Intents.FLAGS.DIRECT_MESSAGES, Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES]});
 const urlRegex = require('url-regex');
 const axios = require('axios');
 const fs = require('fs');
@@ -13,10 +12,9 @@ const { execFile } = require('child_process');
 let cooldown_users = new Set();
 let database = fs.existsSync(config.DB_PATH) ? JSON.parse(fs.readFileSync(config.DB_PATH).toString()) : {};
 
-client.on('message', async msg => {
+client.on('messageCreate', async msg => {
     if (!msg.content || msg.author.bot || cooldown_users.has(msg.author.id))
         return;
-
     let found_match = false;
     //convert to set to remove duplicates and then back to array to be able to slice (slicing so max 5 tiktoks per message)
     Array.from(new Set(msg.content.match(urlRegex()))).slice(0, config.MAX_TIKTOKS_PER_MESSAGE).forEach((url) => {
@@ -24,14 +22,14 @@ client.on('message', async msg => {
             cooldown_users.add(msg.author.id);
             found_match = true;
             try {
-                msg.channel.startTyping().then(msg.channel.stopTyping());
+                msg.channel.sendTyping();
             }
             catch (e) {
                console.log(e);
             }
             TikTokScraper.getVideoMeta(url).then(tt_response =>
                 axios.get(tt_response.collector[0].videoUrl, {responseType: 'arraybuffer', headers: tt_response.headers}).then(axios_response =>
-                    msg.lineReplyNoMention('', {files: [{attachment: axios_response.data, name: `${tt_response.collector[0].id}.mp4`}]}).then(update_database(msg, tt_response))
+                    msg.reply({files: [{attachment: axios_response.data, name: `${tt_response.collector[0].id}.mp4`}], allowedMentions: {repliedUser: false}}).then(update_database(msg, tt_response))
                         .catch(console.error))                  // if sending of the Discord message itself failed, just log error to console
                         .catch(err => report_error(msg, err)))  // if TikTokScraper.getVideoMeta() failed
                         .catch(err => report_error(msg, err));  // if axios.get() failed
@@ -42,7 +40,7 @@ client.on('message', async msg => {
                     return;
                 }
                 if (/.mp4/.test(stdout))
-                    msg.lineReplyNoMention(stdout).catch(console.error);
+                    msg.reply({content: stdout, allowedMentions: {repliedUser: false}}).catch(console.error);
             });
         }
     });

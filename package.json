@@ -10,12 +10,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "discord.js": "^12.5.3",
+    "discord.js": "^13.0.0-dev.2675b08.1627646567",
     "node-cleanup": "^2.1.2"
   },
   "devDependencies": {
     "axios": "^0.21.1",
-    "discord-reply": "^0.1.2",
     "node-cron": "^3.0.0",
     "tiktok-scraper": "^1.4.33",
     "url-regex": "^5.0.0"
