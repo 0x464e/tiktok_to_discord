@@ -104,7 +104,7 @@ nodeCleanup((exitCode, signal) =>
     fs.writeFileSync(config.DB_PATH, JSON.stringify(database)));
 
 function report_error(msg, error) {
-    msg.lineReplyNoMention(`Error on trying to download this TikTok:\n\`${error}\``).catch(console.error);
+    msg.reply({ content: `Error on trying to download this TikTok:\n\`${error}\``, allowedMentions: { repliedUser: false } }).catch(console.error);
 }
 
 
