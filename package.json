@@ -10,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "discord.js": "^13.0.0-dev.t1627732975.331a9d3",
+    "discord.js": "^13.0.0",
     "node-cleanup": "^2.1.2"
   },
   "devDependencies": {
