@@ -27,23 +27,29 @@ client.on('messageCreate', async msg => {
         if (/(www\.tiktok\.com)|(vm\.tiktok\.com)/.test(url)) {
             cooldown_users.add(msg.author.id);
             found_match = true;
-            try {
-                msg.channel.sendTyping();
-            }
-            catch (e) {
-               console.log(e);
-            }
+            msg.channel.sendTyping().catch(console.error)
+
             TikTokScraper.getVideoMeta(url).then(tt_response =>
                 axios.get(tt_response.collector[0].videoUrl, {responseType: 'arraybuffer', headers: tt_response.headers}).then(axios_response => {
-                    if (is_too_large_attachment(msg, axios_response)) {
-                        msg.reply({content: 'This TikTok exceeds the file size limit Discord allows :*(', allowedMentions: {repliedUser: false}}).catch(console.error);
-                        return;
-                    }
-                    msg.reply({files: [{attachment: axios_response.data, name: `${tt_response.collector[0].id}.mp4`}], allowedMentions: {repliedUser: false}}).then(update_database(msg, tt_response))
-                        .catch(console.error) // if sending of the Discord message itself failed, just log error to console
+                    let too_large = is_too_large_attachment(msg.guild, axios_response);
+                    if (too_large && !config.BOOSTED_CHANNEL_ID)  // no channel set from which to borrow file size limits
+                        report_filesize_error(msg);
+                    else if (too_large)
+                        client.channels.fetch(config.BOOSTED_CHANNEL_ID).then(channel => {
+                            if (is_too_large_attachment(channel.guild, axios_response))
+                                report_filesize_error(msg);
+                            else
+                                channel.send({files: [{attachment: axios_response.data, name: `${tt_response.collector[0].id}.mp4`}]}).then(boosted_msg =>
+                                    msg.reply({content: boosted_msg.attachments.first().attachment, allowedMentions: {repliedUser: false}}).then(update_database(msg, tt_response))
+                                        .catch(console.error)) // if the final reply failed
+                                    .catch(console.error); // if sending to the boosted channel failed
+                            }).catch(() => report_filesize_error(msg))
+                    else
+                        msg.reply({files: [{attachment: axios_response.data, name: `${tt_response.collector[0].id}.mp4`}], allowedMentions: {repliedUser: false}}).then(update_database(msg, tt_response))
+                            .catch(console.error) // if sending of the Discord message itself failed, just log error to console
                     })
-                        .catch(err => report_error(msg, err)))  // if TikTokScraper.getVideoMeta() failed
-                        .catch(err => report_error(msg, err));  // if axios.get() failed
+                            .catch(err => report_error(msg, err)))  // if TikTokScraper.getVideoMeta() failed
+                            .catch(err => report_error(msg, err));  // if axios.get() failed
         }
         else if (config.EMBED_TWITTER_VIDEO && /\Wtwitter\.com/.test(url)) {
             execFile('gallery-dl', ['-g', url], (error, stdout, stderr) => {
@@ -65,12 +71,12 @@ client.on('messageCreate', async msg => {
         })();
 })
 
-function is_too_large_attachment(msg, stream) {
+function is_too_large_attachment(guild, stream) {
     let limit = 0;
-    if (!msg.guild)
+    if (!guild)
         limit = filesizeLimit.default;
     else {
-        switch (msg.guild.premiumTier) {
+        switch (guild.premiumTier) {
             case 'NONE':
             case 'TIER_1':
                 limit = filesizeLimit.default;
@@ -139,5 +145,8 @@ function report_error(msg, error) {
     msg.reply({ content: `Error on trying to download this TikTok:\n\`${error}\``, allowedMentions: { repliedUser: false } }).catch(console.error);
 }
 
+function report_filesize_error(msg) {
+    msg.reply({content: 'This TikTok exceeds the file size limit Discord allows :*(', allowedMentions: {repliedUser: false}}).catch(console.error);
+}
 
 client.login(config.TOKEN).then(() => console.log('Connected as ' + client.user.tag)).catch(console.error);

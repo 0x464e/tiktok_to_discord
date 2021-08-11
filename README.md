@@ -39,7 +39,8 @@ For embedding Twitter video:
 ### Usage
 The bot parses links from any message it can see, if TikTok link(s) are found, up to `config.MAX_TIKTOKS_PER_MESSAGE` TikToks are attempted to be downloaded.  
 Information about the usage is stored to `config.DB_PATH` json file, if not disabled via `config.USE_DATABASE`.  
-Each user receives a `config.COOLDOWN_PER_USER` ms cooldown after attempting to download a TikTok.
+Each user receives a `config.COOLDOWN_PER_USER` ms cooldown after attempting to download a TikTok.  
+If a TikTok is too large to be uploaded in your channel, the TikTok can be mirrored from a higher file size limit guild by specifying a channel id to a boosted guild's channel in `config.BOOSTED_CHANNEL_ID`. Granted, of course, that the bot has permissions to send files in that channel.
 
 ### Maintenance
 As mentioned above, there is no official way to download TikToks, so the method used to download may break at any time. In such event, keep your eyes peeled at [tiktok-scraper](https://github.com/drawrowfly/tiktok-scraper) and update the node package after the scraper receives an update.
