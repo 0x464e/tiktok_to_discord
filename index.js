@@ -51,12 +51,11 @@ client.on('messageCreate', async msg => {
                             .catch(err => report_error(msg, err)))  // if TikTokScraper.getVideoMeta() failed
                             .catch(err => report_error(msg, err));  // if axios.get() failed
         }
-        else if (config.EMBED_TWITTER_VIDEO && /\Wtwitter\.com/.test(url)) {
+        else if (config.EMBED_TWITTER_VIDEO && /\Wtwitter\.com\/.+?\/status\//.test(url)) {
             execFile('gallery-dl', ['-g', url], (error, stdout, stderr) => {
-                if (error) {
+                if (error)
                     return;
-                }
-                if (/.mp4/.test(stdout))
+                if (/\.mp4/.test(stdout))
                     msg.reply({content: stdout, allowedMentions: {repliedUser: false}}).catch(console.error);
             });
         }
