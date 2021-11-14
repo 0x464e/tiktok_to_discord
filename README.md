@@ -6,8 +6,9 @@ This is my first *larger* js/nodejs project, so please excuse possible bad code/
 
 ---
 
-Now temporarily also embeds Twitter videos since Discord managed to break that.  
-I'm sure it'll be fixed, so this will get removed then.  
+Now ~~temporarily~~ also embeds Twitter videos ~~since Discord managed to break that.  
+I'm sure it'll be fixed, so this will get removed then.~~  
+This is now fixed, but the default Twitter video player is such trash that I'm keeping this feature in here. With this feature you can straight away get max quality playback instead of being stuck with the very low quality version that the Twitter player will give you.  
 Set `config.EMBED_TWITTER_VIDEO` to enabled this.
 
 ## Getting  Started
