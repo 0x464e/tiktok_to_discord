@@ -25,8 +25,7 @@ Set `config.EMBED_TWITTER_VIDEO` to enabled this.
 ### Installing
 
 * Install [NodeJS](https://nodejs.org/en/) via whatever method is appropriate for your platform.
-  * Follow discord.js' requirements for the required NodeJS version.  
-   **As of writing this 16.6.0 or higher is required, but 17.0 will not work** due to the module `node-canvas` [being incompatible with 17.0 for now](https://github.com/Automattic/node-canvas/issues).
+  * Follow discord.js' requirements for the required NodeJS version.
 * Clone this repository
 `git clone https://github.com/0x464e/tiktok_to_discord`
 * Insert your Discord bot's token into `config.json` 
