@@ -1,13 +1,10 @@
 const config = require('./config.json');
-const TikTokScraper = require('tiktok-scraper');
 const { Intents, Client } = require('discord.js');
 const client = new Client({intents:[Intents.FLAGS.DIRECT_MESSAGES, Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES]});
 const urlRegex = require('url-regex');
 const axios = require('axios');
-const fs = require('fs');
-const nodeCleanup = require('node-cleanup');
-const cron = require('node-cron');
 const { execFile } = require('child_process');
+const puppeteer = require('puppeteer');
 const filesizeLimit = {
     default: 8 * 1024 * 1024 - 1000, // reserve 1KB for the message body
     tier2: 50 * 1024 * 1024 - 1000,
@@ -15,7 +12,6 @@ const filesizeLimit = {
 };
 
 let cooldown_users = new Set();
-let database = fs.existsSync(config.DB_PATH) ? JSON.parse(fs.readFileSync(config.DB_PATH).toString()) : {};
 
 client.on('messageCreate', async msg => {
     if (!msg.content || msg.author.bot || cooldown_users.has(msg.author.id))
@@ -27,10 +23,10 @@ client.on('messageCreate', async msg => {
         if (/(www\.tiktok\.com)|(vm\.tiktok\.com)/.test(url)) {
             cooldown_users.add(msg.author.id);
             found_match = true;
-            msg.channel.sendTyping().catch(console.error)
+            msg.channel.sendTyping().catch(console.error);
 
-            TikTokScraper.getVideoMeta(url).then(tt_response =>
-                axios.get(tt_response.collector[0].videoUrl, {responseType: 'arraybuffer', headers: tt_response.headers}).then(axios_response => {
+            get_tiktok_url(url).then(direct_url =>
+                axios.get(direct_url, { responseType: 'arraybuffer' }).then(axios_response => {
                     let too_large = is_too_large_attachment(msg.guild, axios_response);
                     if (too_large && !config.BOOSTED_CHANNEL_ID)  // no channel set from which to borrow file size limits
                         report_filesize_error(msg);
@@ -39,17 +35,16 @@ client.on('messageCreate', async msg => {
                             if (is_too_large_attachment(channel.guild, axios_response))
                                 report_filesize_error(msg);
                             else
-                                channel.send({files: [{attachment: axios_response.data, name: `${tt_response.collector[0].id}.mp4`}]}).then(boosted_msg =>
-                                    msg.reply({content: boosted_msg.attachments.first().attachment, allowedMentions: {repliedUser: false}}).then(update_database(msg, tt_response))
+                                channel.send({files: [{attachment: axios_response.data, name: `${Date.now()}.mp4`}]}).then(boosted_msg =>
+                                    msg.reply({content: boosted_msg.attachments.first().attachment, allowedMentions: {repliedUser: false}})
                                         .catch(console.error)) // if the final reply failed
                                     .catch(console.error); // if sending to the boosted channel failed
                             }).catch(() => report_filesize_error(msg))
                     else
-                        msg.reply({files: [{attachment: axios_response.data, name: `${tt_response.collector[0].id}.mp4`}], allowedMentions: {repliedUser: false}}).then(update_database(msg, tt_response))
+                        msg.reply({files: [{attachment: axios_response.data, name: `${Date.now()}.mp4`}], allowedMentions: {repliedUser: false}})
                             .catch(console.error) // if sending of the Discord message itself failed, just log error to console
                     })
-                            .catch(err => report_error(msg, err)))  // if TikTokScraper.getVideoMeta() failed
-                            .catch(err => report_error(msg, err));  // if axios.get() failed
+                            .catch(err => report_error(msg, err)));  // if axios.get() failed
         }
         else if (config.EMBED_TWITTER_VIDEO && /\Wtwitter\.com\/.+?\/status\//.test(url)) {
             execFile('gallery-dl', ['-g', url], (error, stdout, stderr) => {
@@ -69,6 +64,25 @@ client.on('messageCreate', async msg => {
             cooldown_users.delete(id);
         })();
 })
+
+async function get_tiktok_url(url)
+{
+    const browser = await puppeteer.launch();
+    const page = await browser.newPage();
+    await page.goto('https://musicaldown.com/en/');
+    await page.evaluate((url) => {
+        document.getElementsByClassName('input-field col s12')[0].children[0].value = url;
+        document.getElementsByClassName('input-field col s12')[1].children[0].click();
+    }, url);
+    await page.waitForNavigation();
+    let direct_url = await page.evaluate(() => {
+        for (let elem of document.getElementsByClassName('btn'))
+            if (elem.innerText.includes('DIRECT LINK'))
+                return elem.href;
+    });
+    await browser.close();
+    return direct_url;
+}
 
 function is_too_large_attachment(guild, stream) {
     let limit = 0;
@@ -90,55 +104,6 @@ function is_too_large_attachment(guild, stream) {
     }
     return stream.data.length >= limit;
 }
-
-async function update_database(msg, tt_response) {
-    if (!config.USE_DATABASE)
-        return
-    if (database.hasOwnProperty(msg.author.id)) {
-        const userId = msg.author.id;
-        const tt = tt_response.collector[0];
-        if (database[userId]['downloads'].hasOwnProperty(tt.id))
-            database[userId]['downloads'][tt.id]['count']++;
-        else {
-            let thumbnail = config.STORE_THUMBNAILS ? 'data:image/png;base64,' + Buffer.from((await axios.get(tt.imageUrl, {responseType: 'arraybuffer', headers: tt_response.headers}))
-                .data, 'binary').toString('base64') : "";
-            database[userId]['downloads'][tt.id] = {
-                'count': 1,
-                'description': tt.text,
-                'userName': '@' + tt.authorMeta.name,
-                'nickname': tt.authorMeta.nickName,
-                'thumbnail': thumbnail
-            };
-        }
-    }
-    else {
-        const userId = msg.author.id;
-        const tt = tt_response.collector[0];
-        let thumbnail = config.STORE_THUMBNAILS ? 'data:image/png;base64,' + Buffer.from((await axios.get(tt.imageUrl, {responseType: 'arraybuffer', headers: tt_response.headers}))
-            .data, 'binary').toString('base64') : "";
-        database[userId] = {
-            'username': msg.author.tag,
-            'firstDownload': Date.now(),
-            'downloads': {
-                [tt.id]: {
-                    'count': 1,
-                    'description': tt.text,
-                    'userName': '@' + tt.authorMeta.name,
-                    'nickname': tt.authorMeta.nickName,
-                    'thumbnail': thumbnail
-                }
-            }
-        };
-    }
-}
-
-//write database to file every hour
-cron.schedule('0 * * * *', () =>
-    fs.writeFileSync(config.DB_PATH, JSON.stringify(database)));
-
-//write database to file on any exit reason
-nodeCleanup((exitCode, signal) =>
-    fs.writeFileSync(config.DB_PATH, JSON.stringify(database)));
 
 function report_error(msg, error) {
     msg.reply({ content: `Error on trying to download this TikTok:\n\`${error}\``, allowedMentions: { repliedUser: false } }).catch(console.error);

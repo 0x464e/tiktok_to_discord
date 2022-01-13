@@ -10,13 +10,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "discord.js": "^13.3.0",
-    "node-cleanup": "^2.1.2"
+    "discord.js": "^13.3.0"
   },
   "devDependencies": {
     "axios": "^0.21.1",
-    "node-cron": "^3.0.0",
-    "tiktok-scraper": "^1.4.36",
+    "puppeteer": "^13.0.1",
     "url-regex": "^5.0.0"
   }
 }
