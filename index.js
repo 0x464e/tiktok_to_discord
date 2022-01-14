@@ -12,6 +12,7 @@ const filesizeLimit = {
 };
 
 let cooldown_users = new Set();
+let browser;
 
 client.on('messageCreate', async msg => {
     if (!msg.content || msg.author.bot || cooldown_users.has(msg.author.id))
@@ -67,20 +68,21 @@ client.on('messageCreate', async msg => {
 
 async function get_tiktok_url(url)
 {
-    const browser = await puppeteer.launch();
+    if (!browser)
+        browser = await puppeteer.launch();
     const page = await browser.newPage();
-    await page.goto('https://musicaldown.com/en/');
+    await page.goto('https://musicaldown.com/en/', { waitUntil: "domcontentloaded" });
     await page.evaluate((url) => {
         document.getElementsByClassName('input-field col s12')[0].children[0].value = url;
         document.getElementsByClassName('input-field col s12')[1].children[0].click();
     }, url);
-    await page.waitForNavigation();
+    await page.waitForNavigation({ waitUntil: "domcontentloaded" });
     let direct_url = await page.evaluate(() => {
         for (let elem of document.getElementsByClassName('btn'))
             if (elem.innerText.includes('DIRECT LINK'))
                 return elem.href;
     });
-    await browser.close();
+    page.close();
     return direct_url;
 }
 
