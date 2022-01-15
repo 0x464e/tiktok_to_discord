@@ -12,7 +12,6 @@ const filesizeLimit = {
 };
 
 let cooldown_users = new Set();
-let browser;
 
 client.on('messageCreate', async msg => {
     if (!msg.content || msg.author.bot || cooldown_users.has(msg.author.id))
@@ -68,8 +67,7 @@ client.on('messageCreate', async msg => {
 
 async function get_tiktok_url(url)
 {
-    if (!browser)
-        browser = await puppeteer.launch();
+    let browser = await puppeteer.launch();
     const page = await browser.newPage();
     await page.goto('https://musicaldown.com/en/', { waitUntil: "domcontentloaded" });
     await page.evaluate((url) => {
@@ -82,7 +80,7 @@ async function get_tiktok_url(url)
             if (elem.innerText.includes('DIRECT LINK'))
                 return elem.href;
     });
-    page.close();
+    await browser.close();
     return direct_url;
 }
 
