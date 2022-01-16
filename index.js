@@ -1,5 +1,5 @@
 const config = require('./config.json');
-const { Intents, Client } = require('discord.js');
+const { Intents, Client, Permissions } = require('discord.js');
 const client = new Client({intents:[Intents.FLAGS.DIRECT_MESSAGES, Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES]});
 const urlRegex = require('url-regex');
 const axios = require('axios');
@@ -12,6 +12,7 @@ const filesizeLimit = {
 };
 
 let cooldown_users = new Set();
+let supress_embeds = new Set();
 
 client.on('messageCreate', async msg => {
     if (!msg.content || msg.author.bot || cooldown_users.has(msg.author.id))
@@ -56,14 +57,46 @@ client.on('messageCreate', async msg => {
         }
     });
 
-    // very basic cooldown implementation to combat spam.
-    // removes user id from set after cooldown_per_user ms.
     if(found_match)
-         (async (id = msg.author.id) => {
+    {
+        //if the embed has already been generated, it'll immediately appear with the message
+        //otherwise we need to wait for the embed to appear in 'messageUpdate' event
+        if (msg.embeds.length)
+        {
+            if (msg.guild.me.permissionsIn(msg.channel).has(Permissions.FLAGS.MANAGE_MESSAGES))
+                msg.suppressEmbeds().catch(console.error);
+        }
+        else
+            supress_embeds.add(msg.id);
+
+        //if the embed hasn't appeared in 10 seconds, lets assume it'll never appear
+        //and clear the message id from `supress_embeds`
+        (async (id = msg.id) => {
+            await new Promise(x => setTimeout(x, 10000));
+            supress_embeds.delete(msg.id);
+        })();
+
+        // very basic cooldown implementation to combat spam.
+        // removes user id from set after cooldown_per_user ms.
+        (async (id = msg.author.id) => {
             await new Promise(x => setTimeout(x, config.COOLDOWN_PER_USER));
             cooldown_users.delete(id);
         })();
+    }
 })
+
+client.on('messageUpdate', (old_msg, new_msg) => {
+    if (!supress_embeds.has(new_msg.id))
+        return;
+
+    //if one or more embeds appeared in this message update
+    if (!old_msg.embeds.length && new_msg.embeds.length)
+    {
+        if (new_msg.guild.me.permissionsIn(new_msg.channel).has(Permissions.FLAGS.MANAGE_MESSAGES))
+            new_msg.suppressEmbeds().catch(console.error);
+        supress_embeds.delete(new_msg.id);
+    }
+});
 
 async function get_tiktok_url(url)
 {
