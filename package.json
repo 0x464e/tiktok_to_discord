@@ -10,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "discord.js": "^13.3.0"
+    "discord.js": "^14.0.0-dev.1651493371-4ba0f56"
   },
   "devDependencies": {
     "axios": "^0.21.1",

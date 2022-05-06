@@ -1,6 +1,6 @@
 const config = require('./config.json');
-const { Intents, Client, Permissions } = require('discord.js');
-const client = new Client({intents:[Intents.FLAGS.DIRECT_MESSAGES, Intents.FLAGS.GUILDS, Intents.FLAGS.GUILD_MESSAGES]});
+const { Client } = require('discord.js');
+const client = new Client({intents:['Guilds', 'DirectMessages', 'GuildMessages', 'MessageContent']});
 const urlRegex = require('url-regex');
 const axios = require('axios');
 const { execFile } = require('child_process');
@@ -63,7 +63,7 @@ client.on('messageCreate', async msg => {
         //otherwise we need to wait for the embed to appear in 'messageUpdate' event
         if (msg.embeds.length)
         {
-            if (msg.guild.me.permissionsIn(msg.channel).has(Permissions.FLAGS.MANAGE_MESSAGES))
+            if (msg.guild.me.permissionsIn(msg.channel).has('ManageMessages'))
                 msg.suppressEmbeds().catch(console.error);
         }
         else
@@ -73,7 +73,7 @@ client.on('messageCreate', async msg => {
         //and clear the message id from `supress_embeds`
         (async (id = msg.id) => {
             await new Promise(x => setTimeout(x, 10000));
-            supress_embeds.delete(msg.id);
+            supress_embeds.delete(id);
         })();
 
         // very basic cooldown implementation to combat spam.
@@ -92,7 +92,7 @@ client.on('messageUpdate', (old_msg, new_msg) => {
     //if one or more embeds appeared in this message update
     if (!old_msg.embeds.length && new_msg.embeds.length)
     {
-        if (new_msg.guild.me.permissionsIn(new_msg.channel).has(Permissions.FLAGS.MANAGE_MESSAGES))
+        if (new_msg.guild.me.permissionsIn(new_msg.channel).has('ManageMessages'))
             new_msg.suppressEmbeds().catch(console.error);
         supress_embeds.delete(new_msg.id);
     }
@@ -123,14 +123,14 @@ function is_too_large_attachment(guild, stream) {
         limit = filesizeLimit.default;
     else {
         switch (guild.premiumTier) {
-            case 'NONE':
-            case 'TIER_1':
+            default:
+            case 1:
                 limit = filesizeLimit.default;
                 break;
-            case 'TIER_2':
+            case 2:
                 limit = filesizeLimit.tier2;
                 break;
-            case 'TIER_3':
+            case 3:
                 limit = filesizeLimit.tier3;
                 break;
         }
