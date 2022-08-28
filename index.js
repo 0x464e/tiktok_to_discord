@@ -1,7 +1,7 @@
 const config = require('./config.json');
 const { Client } = require('discord.js');
 const client = new Client({intents:['Guilds', 'DirectMessages', 'GuildMessages', 'MessageContent']});
-const urlRegex = require('url-regex');
+const urlRegex = require('url-regex-safe');
 const axios = require('axios');
 const { execFile } = require('child_process');
 const puppeteer = require('puppeteer');
