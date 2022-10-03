@@ -110,7 +110,7 @@ async function get_tiktok_url(url)
     await page.waitForNavigation({ waitUntil: "domcontentloaded" });
     let direct_url = await page.evaluate(() => {
         for (let elem of document.getElementsByClassName('btn'))
-            if (elem.innerText.includes('DIRECT LINK'))
+            if (elem.innerText.includes('[HD]') || elem.innerText.includes('DIRECT LINK'))
                 return elem.href;
     });
     await browser.close();
