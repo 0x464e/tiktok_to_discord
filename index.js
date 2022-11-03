@@ -63,7 +63,7 @@ client.on('messageCreate', async msg => {
         //otherwise we need to wait for the embed to appear in 'messageUpdate' event
         if (msg.embeds.length)
         {
-            if (msg.guild.me.permissionsIn(msg.channel).has('ManageMessages'))
+            if (msg.guild.members.me.permissionsIn(msg.channel).has('ManageMessages'))
                 msg.suppressEmbeds().catch(console.error);
         }
         else
@@ -92,7 +92,7 @@ client.on('messageUpdate', (old_msg, new_msg) => {
     //if one or more embeds appeared in this message update
     if (!old_msg.embeds.length && new_msg.embeds.length)
     {
-        if (new_msg.guild.me.permissionsIn(new_msg.channel).has('ManageMessages'))
+        if (new_msg.guild.members.me.permissionsIn(new_msg.channel).has('ManageMessages'))
             new_msg.suppressEmbeds().catch(console.error);
         supress_embeds.delete(new_msg.id);
     }
