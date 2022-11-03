@@ -102,17 +102,22 @@ async function get_tiktok_url(url)
 {
     let browser = await puppeteer.launch();
     const page = await browser.newPage();
-    await page.goto('https://musicaldown.com/en/', { waitUntil: "domcontentloaded" });
+    await page.setViewport({ width: 1920, height: 1080 });
+    await page.goto('https://snaptik.app/en');
     await page.evaluate((url) => {
-        document.getElementsByClassName('input-field col s12')[0].children[0].value = url;
-        document.getElementsByClassName('input-field col s12')[1].children[0].click();
+        document.getElementById('url').value = url;
+        document.getElementsByClassName('btn-go')[0].click()
     }, url);
-    await page.waitForNavigation({ waitUntil: "domcontentloaded" });
+    try
+    {
+        await page.waitForSelector('.download-box', { timeout: 60000 });
+    }
+    catch (err) { return; }
+
     let direct_url = await page.evaluate(() => {
-        for (let elem of document.getElementsByClassName('btn'))
-            if (elem.innerText.includes('[HD]') || elem.innerText.includes('DIRECT LINK'))
-                return elem.href;
+        return document.getElementsByClassName('btn-main active')[0].href;
     });
+
     await browser.close();
     return direct_url;
 }
