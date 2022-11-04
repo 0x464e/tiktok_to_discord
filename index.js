@@ -102,7 +102,6 @@ async function get_tiktok_url(url)
 {
     let browser = await puppeteer.launch();
     const page = await browser.newPage();
-    await page.setViewport({ width: 1920, height: 1080 });
     await page.goto('https://snaptik.app/en');
     await page.evaluate((url) => {
         document.getElementById('url').value = url;
