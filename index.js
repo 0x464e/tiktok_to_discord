@@ -2,9 +2,9 @@ const config = require('./config.json');
 const { Client } = require('discord.js');
 const client = new Client({intents:['Guilds', 'DirectMessages', 'GuildMessages', 'MessageContent']});
 const urlRegex = require('url-regex-safe');
-const axios = require('axios');
 const { execFile } = require('child_process');
-const puppeteer = require('puppeteer');
+const YTDlpWrap = require("yt-dlp-wrap").default;
+const ytDlpWrap = new YTDlpWrap(config.YT_DLP_PATH);
 const filesizeLimit = {
     default: 8 * 1024 * 1024 - 1000, // reserve 1KB for the message body
     tier2: 50 * 1024 * 1024 - 1000,
@@ -19,33 +19,32 @@ client.on('messageCreate', async msg => {
         return;
     let found_match = false;
 
-    //convert to set to remove duplicates and then back to array to be able to slice (slicing so max 5 tiktoks per message)
+    //convert to set to remove duplicates and then back to array to be able to slice (slicing so max config.MAX_TIKTOKS_PER_MESSAGE tiktoks per message)
     Array.from(new Set(msg.content.match(urlRegex()))).slice(0, config.MAX_TIKTOKS_PER_MESSAGE).forEach((url) => {
         if (/(www\.tiktok\.com)|(vm\.tiktok\.com)/.test(url)) {
             cooldown_users.add(msg.author.id);
             found_match = true;
             msg.channel.sendTyping().catch(console.error);
 
-            get_tiktok_url(url).then(direct_url =>
-                axios.get(direct_url, { responseType: 'arraybuffer' }).then(axios_response => {
-                    let too_large = is_too_large_attachment(msg.guild, axios_response);
+            get_tiktok_data(url).then(tiktok_data => {
+                    let too_large = is_too_large_attachment(msg.guild, tiktok_data);
                     if (too_large && !config.BOOSTED_CHANNEL_ID)  // no channel set from which to borrow file size limits
                         report_filesize_error(msg);
                     else if (too_large)
                         client.channels.fetch(config.BOOSTED_CHANNEL_ID).then(channel => {
-                            if (is_too_large_attachment(channel.guild, axios_response))
+                            if (is_too_large_attachment(channel.guild, tiktok_data))
                                 report_filesize_error(msg);
                             else
-                                channel.send({files: [{attachment: axios_response.data, name: `${Date.now()}.mp4`}]}).then(boosted_msg =>
+                                channel.send({files: [{attachment: tiktok_data, name: `${Date.now()}.mp4`}]}).then(boosted_msg =>
                                     msg.reply({content: boosted_msg.attachments.first().attachment, allowedMentions: {repliedUser: false}})
                                         .catch(console.error)) // if the final reply failed
                                     .catch(console.error); // if sending to the boosted channel failed
                             }).catch(() => report_filesize_error(msg))
                     else
-                        msg.reply({files: [{attachment: axios_response.data, name: `${Date.now()}.mp4`}], allowedMentions: {repliedUser: false}})
+                        msg.reply({files: [{attachment: tiktok_data, name: `${Date.now()}.mp4`}], allowedMentions: {repliedUser: false}})
                             .catch(console.error) // if sending of the Discord message itself failed, just log error to console
                     })
-                            .catch(err => report_error(msg, err)));  // if axios.get() failed
+                            .catch(err => report_error(msg, err));  // if get_tiktok_data() failed
         }
         else if (config.EMBED_TWITTER_VIDEO && /\Wtwitter\.com\/.+?\/status\//.test(url)) {
             execFile('gallery-dl', ['-g', url], (error, stdout, stderr) => {
@@ -98,27 +97,14 @@ client.on('messageUpdate', (old_msg, new_msg) => {
     }
 });
 
-async function get_tiktok_url(url)
-{
-    let browser = await puppeteer.launch();
-    const page = await browser.newPage();
-    await page.goto('https://snaptik.app/en');
-    await page.evaluate((url) => {
-        document.getElementById('url').value = url;
-        document.getElementsByClassName('btn-go')[0].click()
-    }, url);
-    try
-    {
-        await page.waitForSelector('.download-box', { timeout: 60000 });
-    }
-    catch (err) { return; }
-
-    let direct_url = await page.evaluate(() => {
-        return document.getElementsByClassName('btn-main active')[0].href;
+function get_tiktok_data(url) {
+    return new Promise((resolve, reject) => {
+        const chunks = [];
+        ytDlpWrap.execStream([url, "-f", "best[vcodec=h264]"])
+            .on("data", (data) => chunks.push(data))
+            .on("end", () => resolve(Buffer.concat(chunks)))
+            .on("error", (err) => reject(err));
     });
-
-    await browser.close();
-    return direct_url;
 }
 
 function is_too_large_attachment(guild, stream) {
@@ -139,7 +125,7 @@ function is_too_large_attachment(guild, stream) {
                 break;
         }
     }
-    return stream.data.length >= limit;
+    return stream.length >= limit;
 }
 
 function report_error(msg, error) {

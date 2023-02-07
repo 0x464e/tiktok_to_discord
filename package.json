@@ -10,11 +10,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "discord.js": "^14.6.0"
-  },
-  "devDependencies": {
-    "axios": "^0.21.1",
-    "puppeteer": "^13.0.1",
-    "url-regex-safe": "^3.0.0"
+    "discord.js": "^14.6.0",
+    "url-regex-safe": "^3.0.0",
+    "yt-dlp-wrap": "^2.3.11"
   }
 }

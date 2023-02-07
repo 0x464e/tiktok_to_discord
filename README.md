@@ -1,10 +1,8 @@
 # Tiktok To Discord
 A Discord bot to automatically download and post the raw video file behind a TikTok link.  
-**Also supports photo TikToks.**
 
 Discord doesn't embed TikTok video links at all, this removes the huge annoyance of having to open the link in your web browser to view the video.  
 ![Demonstration](https://i.imgur.com/k4DlynO.gif)  
-This is my first *larger* js/nodejs project, so please excuse possible bad code/implementations.
 
 ---
 
@@ -19,7 +17,7 @@ Set `config.EMBED_TWITTER_VIDEO` to enabled this.
 
 * [NodeJS](https://nodejs.org/en/)
 * [discord.js](https://github.com/discordjs/discord.js)
-* [puppeteer](https://github.com/puppeteer/puppeteer)
+* [yt-dlp](https://github.com/yt-dlp/yt-dlp)
 * [gallery-dl](https://github.com/mikf/gallery-dl)  
 (if you enable embedding Twitter videos, disabled by default)
 
@@ -27,8 +25,11 @@ Set `config.EMBED_TWITTER_VIDEO` to enabled this.
 
 * Install [NodeJS](https://nodejs.org/en/) via whatever method is appropriate for your platform.
   * Follow discord.js' requirements for the required NodeJS version.
-* You **might** need to install some Chromium related dependencies for Puppeteer to work
-  * If you have problems, maybe see this [issue comment](https://github.com/0x464e/tiktok_to_discord/issues/3#issuecomment-1257024391), or just Google.
+* Install [yt-dlp](https://github.com/yt-dlp/yt-dlp) preferably by having it in PATH
+  * Alternatively, you can set `config.YT_DLP_PATH` to the path of the yt-dlp executable
+  * E.g. download the latest yt-dlp release from [here](https://github.com/yt-dlp/yt-dlp#release-files) and say you
+    were to place the executable in same path as this README, you would set `config.YT_DLP_PATH` to `./yt-dlp`
+  * On Linux you might also need to `chmod +x yt-dlp` to make it executable
 * Clone this repository
 `git clone https://github.com/0x464e/tiktok_to_discord`
 * Insert your Discord bot's token into `config.json` 
@@ -44,6 +45,5 @@ For embedding Twitter video:
 
 ### Usage
 The bot parses links from any message it can see, if TikTok link(s) are found, up to `config.MAX_TIKTOKS_PER_MESSAGE` TikToks are attempted to be downloaded.  
-Information about the usage is stored to `config.DB_PATH` json file, if not disabled via `config.USE_DATABASE`.  
 Each user receives a `config.COOLDOWN_PER_USER` ms cooldown after attempting to download a TikTok.  
 If a TikTok is too large to be uploaded in your channel, the TikTok can be mirrored from a higher file size limit guild by specifying a channel id to a boosted guild's channel in `config.BOOSTED_CHANNEL_ID`. Granted, of course, that the bot has permissions to send files in that channel.
