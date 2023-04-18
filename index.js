@@ -6,7 +6,7 @@ const { execFile } = require('child_process');
 const YTDlpWrap = require("yt-dlp-wrap").default;
 const ytDlpWrap = new YTDlpWrap(config.YT_DLP_PATH);
 const filesizeLimit = {
-    default: 8 * 1024 * 1024 - 1000, // reserve 1KB for the message body
+    default: 25 * 1024 * 1024 - 1000, // reserve 1KB for the message body
     tier2: 50 * 1024 * 1024 - 1000,
     tier3: 100 * 1024 * 1024 - 1000
 };
