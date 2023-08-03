@@ -100,7 +100,7 @@ client.on('messageUpdate', (old_msg, new_msg) => {
 function get_tiktok_data(url) {
     return new Promise((resolve, reject) => {
         const chunks = [];
-        ytDlpWrap.execStream([url, "-f", "best[vcodec=h264]"])
+        ytDlpWrap.execStream([url, "-f", "best[vcodec!=h265]/best"])
             .on("data", (data) => chunks.push(data))
             .on("end", () => resolve(Buffer.concat(chunks)))
             .on("error", (err) => reject(err));
